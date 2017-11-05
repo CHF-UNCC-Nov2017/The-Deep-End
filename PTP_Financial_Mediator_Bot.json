@@ -1,0 +1,802 @@
+{
+  "name" : "PTP_Financial_Mediator_Bot",
+  "description" : "Mediates Peer to Peer Financial Interactions for _ app.",
+  "type" : "USER",
+  "intents" : [ {
+    "name" : "Emotion Rec",
+    "paramsList" : [ {
+      "entity" : {
+        "name" : "User_Hostility_Identifier",
+        "type" : "ENUMVALUES",
+        "enumValues" : "Low{annoyed:annoy:critical:displease:displeased:frustrate:frustrated:irritate:irritated:annoying:displeasing:frustrating:irritating},Medium{angry:anger:aggravated:aggravate:antagonize:antagonized:mad:offended:offend:aggravating:antagonizing:offensive},High{aggressive:aggression:appalled:bitter:disgust:disgusted:furious:irate:outraged:outrage:disgusting:outraging:appalling}",
+        "ruleParameters" : null,
+        "parentEntity" : null,
+        "patternExpression" : null
+      },
+      "name" : "User_Hostility_IdentifierFlag hostile words of user so machine can utilize alternative responses and reactions.",
+      "isRequired" : true,
+      "required" : true
+    } ],
+    "type" : "NLPIntent"
+  }, {
+    "name" : "Credit Score",
+    "paramsList" : [ {
+      "entity" : {
+        "name" : "ScoreType",
+        "type" : "ENUMVALUES",
+        "enumValues" : "Experian,Equifax,TransUnion,Average{overall:total:estimated:mean}",
+        "ruleParameters" : null,
+        "parentEntity" : null,
+        "patternExpression" : null
+      },
+      "name" : "ScoreType",
+      "isRequired" : true,
+      "required" : true
+    } ],
+    "type" : "NLPIntent"
+  }, {
+    "name" : "Customer Service",
+    "paramsList" : [ {
+      "entity" : {
+        "name" : "ServiceType",
+        "type" : "ENUMVALUES",
+        "enumValues" : "Claims,Representative{contact:human:person:people:real},Bug{problem:report:broken:fix:broke}",
+        "ruleParameters" : null,
+        "parentEntity" : null,
+        "patternExpression" : null
+      },
+      "name" : "Problems",
+      "isRequired" : true,
+      "required" : true
+    } ],
+    "type" : "NLPIntent"
+  }, {
+    "name" : "Balance",
+    "paramsList" : [ {
+      "entity" : {
+        "name" : "AccountType",
+        "type" : "ENUMVALUES",
+        "enumValues" : "Savings{save},Checking{check},Credit Card{Visa:Mastercard:Card:Credit}",
+        "ruleParameters" : null,
+        "parentEntity" : null,
+        "patternExpression" : null
+      },
+      "name" : "AccountType",
+      "isRequired" : true,
+      "required" : true
+    } ],
+    "type" : "NLPIntent"
+  } ],
+  "entities" : [ {
+    "name" : "ScoreType",
+    "type" : "ENUMVALUES",
+    "enumValues" : "Experian,Equifax,TransUnion,Average{overall:total:estimated:mean}",
+    "ruleParameters" : null,
+    "parentEntity" : null,
+    "patternExpression" : null
+  }, {
+    "name" : "AccountType",
+    "type" : "ENUMVALUES",
+    "enumValues" : "Savings{save},Checking{check},Credit Card{Visa:Mastercard:Card:Credit}",
+    "ruleParameters" : null,
+    "parentEntity" : null,
+    "patternExpression" : null
+  }, {
+    "name" : "User_Hostility_Identifier",
+    "type" : "ENUMVALUES",
+    "enumValues" : "Low{annoyed:annoy:critical:displease:displeased:frustrate:frustrated:irritate:irritated:annoying:displeasing:frustrating:irritating},Medium{angry:anger:aggravated:aggravate:antagonize:antagonized:mad:offended:offend:aggravating:antagonizing:offensive},High{aggressive:aggression:appalled:bitter:disgust:disgusted:furious:irate:outraged:outrage:disgusting:outraging:appalling}",
+    "ruleParameters" : null,
+    "parentEntity" : null,
+    "patternExpression" : null
+  }, {
+    "name" : "ServiceType",
+    "type" : "ENUMVALUES",
+    "enumValues" : "Claims,Representative{contact:human:person:people:real},Bug{problem:report:broken:fix:broke}",
+    "ruleParameters" : null,
+    "parentEntity" : null,
+    "patternExpression" : null
+  } ],
+  "dialog" : [ {
+    "metadata" : {
+      "platformVersion" : "1.0"
+    },
+    "main" : true,
+    "name" : "PTP_Financial_Mediator_Bot",
+    "context" : {
+      "variables" : {
+        "accountType" : "AccountType",
+        "iResult" : "nlpresult",
+        "scoreType" : "ScoreType",
+        "serviceType" : "ServiceType",
+        "hostility" : "User_Hostility_Identifier"
+      }
+    },
+    "states" : {
+      "initiate" : {
+        "component" : "System.Intent",
+        "properties" : {
+          "confidenceThreshold" : 0.4,
+          "variable" : "iResult"
+        },
+        "transitions" : {
+          "actions" : {
+            "Balance" : "startBalance",
+            "Credit Score" : "startScore",
+            "Customer Service" : "startService",
+            "unresolvedIntent" : "unresolved"
+          }
+        }
+      },
+      "hostilityTest" : {
+        "component" : "System.ConditionExists",
+        "properties" : {
+          "variable" : "hostility"
+        },
+        "transitions" : {
+          "actions" : {
+            "exists" : "initiate_h1",
+            "notexists" : "initiate"
+          }
+        }
+      },
+      "startBalance" : {
+        "component" : "System.SetVariable",
+        "properties" : {
+          "variable" : "accountType",
+          "value" : "${iResult.value.entityMatches['accountType'][0]}"
+        },
+        "transitions" : { }
+      },
+      "askAccountType" : {
+        "component" : "System.List",
+        "properties" : {
+          "options" : "${accountType.type.enumValues}",
+          "prompt" : "What account would you like to access?",
+          "variable" : "AccountType"
+        },
+        "transitions" : { }
+      },
+      "printBalance" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "The balance for your ${accountType.value} is $500."
+        },
+        "transitions" : {
+          "return" : "printBalance"
+        }
+      },
+      "startScore" : {
+        "component" : "System.SetVariable",
+        "properties" : {
+          "variable" : "scoreType",
+          "value" : "${iResult.value.entityMatches['scoreType'][0]}"
+        },
+        "transitions" : { }
+      },
+      "askScoreType" : {
+        "component" : "System.List",
+        "properties" : {
+          "options" : "$(scoreType.type.enumValues}",
+          "prompt" : "How can I help you?",
+          "variable" : "scoreType"
+        },
+        "transitions" : { }
+      },
+      "printScore" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "Your ${scoreType.value} is 678."
+        },
+        "transitions" : {
+          "return" : "printScore"
+        }
+      },
+      "startService" : {
+        "component" : "System.SetVariable",
+        "properties" : {
+          "variable" : "serviceType",
+          "value" : "${iResult.value.entityMatches['serviceType'][0]}"
+        },
+        "transitions" : { }
+      },
+      "askServiceSpec" : {
+        "component" : "System.List",
+        "properties" : {
+          "options" : "$(serviceType.type.enumValues}",
+          "prompt" : "How can I help you?",
+          "variable" : "serviceType"
+        },
+        "transitions" : { }
+      },
+      "switch" : {
+        "component" : "System.Switch",
+        "properties" : {
+          "variable" : "serviceType",
+          "values" : [ "Claims", "Representative", "Bug" ]
+        },
+        "transitions" : {
+          "actions" : {
+            "option1" : "startClaim",
+            "option2" : "contactRepresentative",
+            "option3" : "sendBugReport",
+            "NONE" : "unresolved"
+          }
+        }
+      },
+      "startClaim" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "The automated claims system is down. lease send an email containing your name and the transaction number of the loan on which you are making the claim to claims@loanstar.org. One of our qualified representatives will process the claim as soon as possible."
+        },
+        "transitions" : { }
+      },
+      "contactRepresentative" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "Please contact +19195391185 to speak to the first available representative."
+        },
+        "transitions" : {
+          "return" : "initiate"
+        }
+      },
+      "sendBugReport" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "Please send a breif explenation of the bug that you encountered and any screenshots of the event to bugreport@loanstar.org."
+        },
+        "transitions" : {
+          "return" : "initiate"
+        }
+      },
+      "unresolved" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "Your intent is unclear. Please try again."
+        },
+        "transitions" : {
+          "return" : "intiate"
+        }
+      },
+      "initiate_h1" : {
+        "component" : "System.Intent",
+        "properties" : {
+          "confidenceThreshold" : 0.4,
+          "variable" : "iResult"
+        },
+        "transitions" : {
+          "actions" : {
+            "Balance" : "startBalance_h1",
+            "Credit Score" : "startScore_h1",
+            "Customer Service" : "startService_h1",
+            "unresolvedIntent" : "unresolved_h1"
+          }
+        }
+      },
+      "startBalance_h1" : {
+        "component" : "System.SetVariable",
+        "properties" : {
+          "variable" : "accountType",
+          "value" : "${iResult.value.entityMatches['accountType'][0]}"
+        },
+        "transitions" : { }
+      },
+      "askh1AccountType_h1" : {
+        "component" : "System.List",
+        "properties" : {
+          "options" : "${accountType.type.enumValues}",
+          "prompt" : "From which account do you wish to see your balance?",
+          "variable" : "AccountType"
+        },
+        "transitions" : { }
+      },
+      "printBalance_h1" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : " ${accountType.value} is $1067."
+        },
+        "transitions" : {
+          "return" : "printBalance_h1"
+        }
+      },
+      "startScore_h1" : {
+        "component" : "System.SetVariable",
+        "properties" : {
+          "variable" : "scoreType",
+          "value" : "${iResult.value.entityMatches['scoreType'][0]}"
+        },
+        "transitions" : { }
+      },
+      "askScoreType_h1" : {
+        "component" : "System.List",
+        "properties" : {
+          "options" : "$(scoreType.type.enumValues}",
+          "prompt" : "How may I assist you?",
+          "variable" : "scoreType"
+        },
+        "transitions" : { }
+      },
+      "printScore_h1" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "You have a(n) ${scoreType.value} score of 678."
+        },
+        "transitions" : {
+          "return" : "printScore_h1"
+        }
+      },
+      "startService_h1" : {
+        "component" : "System.SetVariable",
+        "properties" : {
+          "variable" : "serviceType",
+          "value" : "${iResult.value.entityMatches['serviceType'][0]}"
+        },
+        "transitions" : { }
+      },
+      "askServiceSpec_h1" : {
+        "component" : "System.List",
+        "properties" : {
+          "options" : "$(serviceType.type.enumValues}",
+          "prompt" : "How may I be of service?",
+          "variable" : "serviceType"
+        },
+        "transitions" : { }
+      },
+      "switch_h1" : {
+        "component" : "System.Switch",
+        "properties" : {
+          "variable" : "serviceType",
+          "values" : [ "Claims", "Representative", "Bug" ]
+        },
+        "transitions" : {
+          "actions" : {
+            "option1" : "startClaim_h1",
+            "option2" : "contactRepresentative_h1",
+            "option3" : "sendBugReport_h1",
+            "NONE" : "unresolved_h1"
+          }
+        }
+      },
+      "startClaim_h1" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "Due to extenuating circumstances, the automated claims system is currently unavailable./Please send an email containing your name and the transaction number of the loan on which you are making the claim to claims@loanstar.org. One of our qualified representatives will process the claim as soon as possible."
+        },
+        "transitions" : { }
+      },
+      "contactRepresentative_h1" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "We appreciate your opinion. lease contact +19195391185"
+        },
+        "transitions" : {
+          "return" : "initiate_h1"
+        }
+      },
+      "sendBugReport_h1" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "Thank you for helping to make this platform better! lease send a breif explenation of the bug that you encountered and any screenshots of the event to bugreport@loanstar.org."
+        },
+        "transitions" : {
+          "return" : "initiate_h1"
+        }
+      },
+      "unresolved_h1" : {
+        "component" : "System.Output",
+        "properties" : {
+          "text" : "My apologies. I did not understand what you said. Please try again."
+        },
+        "transitions" : {
+          "return" : "intiate"
+        }
+      }
+    }
+  } ],
+  "componentServices" : [ {
+    "name" : "MasterBotComponents",
+    "url" : "https://mcsnas-a429941.mobileenv.us2.oraclecloud.com:443/mobile/custom/BankingCC/components",
+    "version" : "1.0",
+    "headers" : [ ],
+    "credentials" : {
+      "type" : "mcs",
+      "mobileBackendId" : "f88935a1-cfd1-4ed8-847c-5043dfa73f3e",
+      "anonymous" : true,
+      "username" : null,
+      "anonymousKeyKey" : null,
+      "passwordKey" : null
+    }
+  } ],
+  "trainingDataList" : [ {
+    "sentence" : "optimistic",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "offend",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "optimistic",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "outrage",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "outraged",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "overjoy",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "overjoyed",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "pissed",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "pissed off",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "pleased",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "proud",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "satisfy",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "satisfied",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "smiling",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "smile",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "thrill",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "thrilled",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "unhappy",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "worked up",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "displease",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "amuse",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "aggravate",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "annoy",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "antagonize",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "excite",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "friends",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "not happy",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "offended",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "frustrating",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "happiness",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "irritating",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "pleasing",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "satisfying",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "aggravated",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "amused",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "angered",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "angry",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "annoyed",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "antagonized",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "appaled",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "bitter",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "calm",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "cheerful",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "critical",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "delight",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "delighted",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "disgusted",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "disgust",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "displeased",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "ecstatic",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "excited",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "friendly",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "friend",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "frustrated",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "frustrate",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "furious",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "glad",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "happy",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "inspired",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "inspire",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "irritated",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "joyful",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "joy",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "lively",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "mad",
+    "intent" : "Emotion Rec",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "check my credit score",
+    "intent" : "Credit Score",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "my credit score",
+    "intent" : "Credit Score",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "credit score",
+    "intent" : "Credit Score",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "what is my credit",
+    "intent" : "Credit Score",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "customer service",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "issue",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "report an issue",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "report issue",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "report problem",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "report a problem",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "claim",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "representative",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "help",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "problem",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "halp",
+    "intent" : "Customer Service",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "Check my balance",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "What's my balance",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "What is my balance",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "tell me my balance",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "my balance",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "Check my balance",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "How much do I have in saving",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "balance",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "How much do I have on my credit card",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  }, {
+    "sentence" : "credit card",
+    "intent" : "Balance",
+    "namedEntities" : [ ]
+  } ],
+  "channels" : [ {
+    "name" : "System_Bot_Test",
+    "description" : "Used by the BOT test feature. If it is disabled, the test UI will not work for this BOT.",
+    "enabled" : true,
+    "config" : {
+      "type" : "test"
+    }
+  }, {
+    "name" : "FacebookMessenger",
+    "enabled" : true,
+    "config" : {
+      "type" : "facebook"
+    }
+  }, {
+    "name" : "Test1",
+    "enabled" : true,
+    "config" : {
+      "type" : "webhook",
+      "webhookUri" : "https://si-agiletimes.firebaseapp.com/#/dashboard"
+    }
+  } ],
+  "settings" : {
+    "createdOn" : "2017-11-04T18:26:18.139Z",
+    "updatedOn" : "2017-11-04T18:26:18.139Z",
+    "links" : null,
+    "settings" : {
+      "Multistage_Pipeline" : true,
+      "Verbose_Output" : false,
+      "Result_Size" : 10,
+      "Pipeline_Output_Size" : 100
+    }
+  }
+}
